@@ -51,8 +51,7 @@ overlay.innerHTML=`
     }
     @keyframes __modalIn{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
     #${MODAL_ID} .__hdr{
-      display:flex;align-items:center;gap:8px;
-      padding:12px 14px;
+      display:flex;align-items:center;gap:8px;padding:12px 14px;
       background:linear-gradient(180deg,#eff6ff,#ffffff 60%);
       border-bottom:1px solid #e5e7eb;
     }
@@ -83,7 +82,7 @@ overlay.innerHTML=`
       border-bottom:1px dashed #eef2ff;
     }
     #${MODAL_ID} .__row:hover{background:#f6faff}
-    #${MODAL_ID} .__row label{display:flex;align-items:center;gap:10px;cursor:pointer;width:100%;}
+    #${MODAL_ID} .__row label{display:flex;align-items:center;gap:10px;cursor:pointer;width:100%}
     #${MODAL_ID} .__row .__name{font-weight:600}
     #${MODAL_ID} .__row .__meta{color:#5b6b8a;font-size:12px}
     #${MODAL_ID} .__ft{
@@ -94,6 +93,7 @@ overlay.innerHTML=`
       background:#2563eb;color:#fff;border:1px solid #1d4ed8;
       font-weight:700;
     }
+    /* ← 他サイトのCSSに負けないよう最優先で上書き */
     #${MODAL_ID} .__ft button.__start{
       background:#2563eb;color:#ffffff;border:1px solid #1d4ed8;
       font-weight:700;display:inline-flex;align-items:center;justify-content:center;
@@ -101,9 +101,7 @@ overlay.innerHTML=`
     }
     #${MODAL_ID} .__start:hover{filter:brightness(1.05)}
     #${MODAL_ID} .__cancel{background:#ffffff;color:#0f172a;border:1px solid #cfe0ff}
-    #${MODAL_ID} button:focus-visible{
-      outline:3px solid rgba(37,99,235,.35);outline-offset:2px;
-    }
+    #${MODAL_ID} button:focus-visible{outline:3px solid rgba(37,99,235,.35);outline-offset:2px}
     @media (prefers-color-scheme:dark){
       #${MODAL_ID}{background:rgba(2,6,23,.6)}
       #${MODAL_ID} .__panel{background:#0b1220;color:#e5e7eb;border-color:#1e293b}
@@ -167,12 +165,13 @@ function renderList(flt=null){
   let re=null;
   if(flt && flt.startsWith('/') && flt.lastIndexOf('/')>0){
     const last=flt.lastIndexOf('/');const body=flt.slice(1,last);const flags=flt.slice(last+1);
-    try{ re=new RegExp(body,flags);}catch(_){}
+    try{re=new RegExp(body,flags);}catch(_){}
   }
   const q=(flt||'').toLowerCase();
   listEl.innerHTML='';let shown=0;
   for(const it of items){
-    const text=`${it.zzz}${it.kkk}`.toLowerCase();let hit=true;
+    const text=`${it.zzz}${it.kkk}`.toLowerCase();
+    let hit=true;
     if(re){hit=re.test(text);}else if(q){hit=text.includes(q);}
     if(!hit) continue;
     const checkboxId=`__pick_${it.idx}`;
