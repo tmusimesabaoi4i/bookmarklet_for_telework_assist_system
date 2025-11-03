@@ -7,7 +7,6 @@ const sanitize=s=>(s||'noname').replace(/[\\/:*?"<>|]+/g,'_').replace(/\s+/g,' '
 const zzzOf=row=>row.querySelector('td.name')?.innerText?.trim()||'noname';
 const kkkOf=row=>row.querySelector('td.date')?.innerText?.trim()||'noname';
 const DEFAULT_SELECTED_KEYWORDS=['範囲','明細書','図面','手続補正書','意見書','拒絶理由通知書'];
-const isDefaultSelected=name=>{const n=(name||'').toLowerCase();return DEFAULT_SELECTED_KEYWORDS.some(k=>n.includes(String(k).toLowerCase()));};
 
 const MODAL_ID='__JPO_ZZZ_PICKER__';document.getElementById(MODAL_ID)?.remove();
 const overlay=document.createElement('div');
@@ -52,7 +51,8 @@ overlay.innerHTML=`
     }
     @keyframes __modalIn{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
     #${MODAL_ID} .__hdr{
-      display:flex;align-items:center;gap:8px;padding:12px 14px;
+      display:flex;align-items:center;gap:8px;
+      padding:12px 14px;
       background:linear-gradient(180deg,#eff6ff,#ffffff 60%);
       border-bottom:1px solid #e5e7eb;
     }
@@ -66,16 +66,22 @@ overlay.innerHTML=`
       border-bottom:1px solid #e5e7eb;background:#f8fbff;
     }
     #${MODAL_ID} .__tools .__filter{
-      flex:1;padding:10px 12px;border:1px solid #cfe0ff;border-radius:10px;font-size:14px;outline:none;
+      flex:1;padding:10px 12px;border:1px solid #cfe0ff;border-radius:10px;font-size:14px;
+      outline:none;
     }
-    #${MODAL_ID} .__tools .__filter:focus{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.15)}
+    #${MODAL_ID} .__tools .__filter:focus{
+      border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.15);
+    }
     #${MODAL_ID} .__tools button,
     #${MODAL_ID} .__ft button{
       padding:10px 12px;font-size:13px;border-radius:10px;cursor:pointer;
       border:1px solid #cfe0ff;background:#ffffff;
     }
     #${MODAL_ID} .__list{flex:1;overflow:auto;padding:8px 14px;background:#ffffff}
-    #${MODAL_ID} .__row{display:flex;align-items:center;gap:10px;padding:8px 6px;border-bottom:1px dashed #eef2ff}
+    #${MODAL_ID} .__row{
+      display:flex;align-items:center;gap:10px;padding:8px 6px;
+      border-bottom:1px dashed #eef2ff;
+    }
     #${MODAL_ID} .__row:hover{background:#f6faff}
     #${MODAL_ID} .__row label{display:flex;align-items:center;gap:10px;cursor:pointer;width:100%;}
     #${MODAL_ID} .__row .__name{font-weight:600}
@@ -84,6 +90,10 @@ overlay.innerHTML=`
       display:flex;align-items:center;gap:10px;padding:12px 14px;
       border-top:1px solid #e5e7eb;background:#f8fbff;
     }
+    #${MODAL_ID} .__start{
+      background:#2563eb;color:#fff;border:1px solid #1d4ed8;
+      font-weight:700;
+    }
     #${MODAL_ID} .__ft button.__start{
       background:#2563eb;color:#ffffff;border:1px solid #1d4ed8;
       font-weight:700;display:inline-flex;align-items:center;justify-content:center;
@@ -91,7 +101,9 @@ overlay.innerHTML=`
     }
     #${MODAL_ID} .__start:hover{filter:brightness(1.05)}
     #${MODAL_ID} .__cancel{background:#ffffff;color:#0f172a;border:1px solid #cfe0ff}
-    #${MODAL_ID} button:focus-visible{outline:3px solid rgba(37,99,235,.35);outline-offset:2px}
+    #${MODAL_ID} button:focus-visible{
+      outline:3px solid rgba(37,99,235,.35);outline-offset:2px;
+    }
     @media (prefers-color-scheme:dark){
       #${MODAL_ID}{background:rgba(2,6,23,.6)}
       #${MODAL_ID} .__panel{background:#0b1220;color:#e5e7eb;border-color:#1e293b}
@@ -112,6 +124,8 @@ const scw=window.innerWidth-document.documentElement.clientWidth;
 document.body.style.overflow='hidden';
 if(scw>0) document.body.style.paddingRight=scw+'px';
 
+const inertTargets=[...document.body.children].filter(el=>el!==overlay);
+inertTargets.forEach(el=>{try{el.inert=true;}catch(_){ } el.setAttribute('aria-hidden','true');});
 document.body.appendChild(overlay);
 
 const panel=overlay.querySelector('.__panel');
@@ -121,26 +135,31 @@ const countEl=overlay.querySelector('.__count');
 const closeBtn=overlay.querySelector('.__close');
 const cancelBtn=overlay.querySelector('.__cancel');
 const startBtn=overlay.querySelector('.__start');
+const selAllBtn=overlay.querySelector('.__selall');
+const clearBtn=overlay.querySelector('.__clear');
 
 function closeModal(){
+  overlay.removeEventListener('keydown',trapKey);
   overlay.remove();
   document.body.style.overflow=prevOverflow;
   document.body.style.paddingRight=prevPR;
+  inertTargets.forEach(el=>{try{el.inert=false;}catch(_){ } el.removeAttribute('aria-hidden');});
 }
 
-overlay.addEventListener('mousedown',e=>{if(e.target===overlay) closeModal();});
-overlay.addEventListener('keydown',e=>{
-  if(e.key==='Escape') closeModal();
-  if(e.key==='Enter' && document.activeElement===filterEl) startBtn.click();
+const getFocusable=()=>Array.from(panel.querySelectorAll('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])')).filter(el=>!el.disabled && el.offsetParent!==null);
+function trapKey(e){
   if(e.key==='Tab'){
-    const f=Array.from(panel.querySelectorAll('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])')).filter(el=>!el.disabled&&el.offsetParent!==null);
-    if(!f.length) return;
+    const f=getFocusable(); if(!f.length) return;
     const first=f[0], last=f[f.length-1];
     if(e.shiftKey && document.activeElement===first){last.focus();e.preventDefault();}
     else if(!e.shiftKey && document.activeElement===last){first.focus();e.preventDefault();}
-  }
-});
+  }else if(e.key==='Escape'){closeModal();}
+  else if(e.key==='Enter' && document.activeElement===filterEl){startBtn.click();}
+}
+overlay.addEventListener('keydown',trapKey);
 setTimeout(()=>filterEl.focus(),10);
+
+overlay.addEventListener('mousedown',e=>{if(e.target===overlay) closeModal();});
 
 const escapeHTML=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const items=rows.map((row,i)=>({idx:i,row,zzz:zzzOf(row),kkk:kkkOf(row),id:row.getAttribute('data-content-id')}));
@@ -148,15 +167,13 @@ function renderList(flt=null){
   let re=null;
   if(flt && flt.startsWith('/') && flt.lastIndexOf('/')>0){
     const last=flt.lastIndexOf('/');const body=flt.slice(1,last);const flags=flt.slice(last+1);
-    try{re=new RegExp(body,flags);}catch(_){}
+    try{ re=new RegExp(body,flags);}catch(_){}
   }
   const q=(flt||'').toLowerCase();
   listEl.innerHTML='';let shown=0;
   for(const it of items){
-    const text=`${it.zzz}${it.kkk}`.toLowerCase();
-    let hit=true;
-    if(re) hit=re.test(text);
-    else if(q) hit=text.includes(q);
+    const text=`${it.zzz}${it.kkk}`.toLowerCase();let hit=true;
+    if(re){hit=re.test(text);}else if(q){hit=text.includes(q);}
     if(!hit) continue;
     const checkboxId=`__pick_${it.idx}`;
     const def=DEFAULT_SELECTED_KEYWORDS.some(k=>(it.zzz||'').toLowerCase().includes(String(k).toLowerCase()));
@@ -172,8 +189,8 @@ function renderList(flt=null){
 }
 renderList();
 
-overlay.querySelector('.__selall').onclick=()=>{listEl.querySelectorAll('input[type=checkbox]').forEach(cb=>cb.checked=true);};
-overlay.querySelector('.__clear').onclick=()=>{listEl.querySelectorAll('input[type=checkbox]').forEach(cb=>cb.checked=false);};
+selAllBtn.onclick=()=>{listEl.querySelectorAll('input[type=checkbox]').forEach(cb=>cb.checked=true);};
+clearBtn.onclick=()=>{listEl.querySelectorAll('input[type=checkbox]').forEach(cb=>cb.checked=false);};
 filterEl.oninput=()=>renderList(filterEl.value.trim());
 closeBtn.onclick=cancelBtn.onclick=closeModal;
 
